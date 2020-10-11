@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "continuebutton",
+  "version": "${version}",
+
+  "name": "Continue Button",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "umollu"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+
+  "license": "MIT",
+  "icon": "assets/continuebutton/icon.png",
+
+  "environment": "*",
+  "mixins": [
+    "continuebutton.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "minecraft": "1.16.x"
+  },
+  "suggests": {
+    "flamingo": "*"
+  }
+}

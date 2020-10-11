@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.umollu.continuebutton.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "MixinTitleScreen",
+    "MixinScreen",
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
