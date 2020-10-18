@@ -33,7 +33,7 @@ public class MixinTitleScreen extends Screen {
 
     @Inject(at = @At("RETURN"), method = "initWidgetsNormal(II)V")
     public void drawMenuButton(int y, int spacingY, CallbackInfo info) {
-        this.addButton(new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("Continue"), button -> {
+        this.addButton(new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("continuebutton.continueButtonTitle"), button -> {
 
             LevelStorage levelStorage = this.client.getLevelStorage();
             List<LevelSummary> levels = null;
