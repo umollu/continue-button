@@ -2,9 +2,8 @@
   "schemaVersion": 1,
   "id": "continuebutton",
   "version": "${version}",
-
   "name": "Continue Button",
-  "description": "Continue the last save you played from the main screen",
+  "description": "Continue the last world you played from the main screen",
   "authors": [
     "umollu"
   ],
@@ -17,16 +16,17 @@
   "icon": "assets/continuebutton/icon.png",
 
   "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.umollu.continuebutton.ContinueButtonMod"
+    ]
+  },
   "mixins": [
     "continuebutton.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=0.7.4",
     "fabric": "*",
     "minecraft": "1.16.x"
-  },
-  "suggests": {
-    "flamingo": "*"
   }
 }

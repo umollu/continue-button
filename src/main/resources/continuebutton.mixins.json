@@ -6,6 +6,8 @@
   "client": [
     "MixinTitleScreen",
     "MixinScreen",
+    "MixinWorldListWidgetEntry",
+    "MixinMinecraftClient"
   ],
   "injectors": {
     "defaultRequire": 1
