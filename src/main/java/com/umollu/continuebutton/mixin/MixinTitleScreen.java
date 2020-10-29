@@ -5,6 +5,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.gui.screen.world.CreateWorldScreen;
 import net.minecraft.client.gui.screen.world.EditWorldScreen;
+import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.MultiplayerServerListPinger;
 import net.minecraft.client.network.ServerInfo;
@@ -30,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Mixin(TitleScreen.class)
+@Mixin(value = TitleScreen.class, priority = 1001)
 public class MixinTitleScreen extends Screen {
     private LevelSummary level = null;
     private LevelSummary localLevel = null;
@@ -41,10 +42,10 @@ public class MixinTitleScreen extends Screen {
         super(title);
     }
 
-    @Inject(at = @At("RETURN"), method = "initWidgetsNormal(II)V")
+    @Inject(at = @At("HEAD"), method = "initWidgetsNormal(II)V")
     public void drawMenuButton(int y, int spacingY, CallbackInfo info) {
-        this.addButton(new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("continuebutton.continueButtonTitle"), button -> {
 
+        AbstractButtonWidget continueButton = new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("continuebutton.continueButtonTitle"), button -> {
             if(ContinueButtonMod.lastLocal) {
                 LevelStorage levelStorage = this.client.getLevelStorage();
                 List<LevelSummary> levels = null;
@@ -140,25 +141,29 @@ public class MixinTitleScreen extends Screen {
                 list.add(0, new LiteralText(serverInfo.name).formatted(Formatting.GRAY).asOrderedText());
                 this.renderOrderedTooltip(matrixStack, list, i, j);
             }
-        }));
+        });
+        addButton(continueButton);
     }
 
     private void start() {
         this.client.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
         if (this.client.getLevelStorage().levelExists(this.level.getName())) {
-            this.method_29990();
+            this.client.method_29970(new SaveLevelScreen(new TranslatableText("selectWorld.data_read")));
             this.client.startIntegratedServer(this.level.getName());
         }
         ContinueButtonMod.lastLocal = true;
         ContinueButtonMod.saveConfig();
     }
 
-    private void method_29990() {
-        this.client.method_29970(new SaveLevelScreen(new TranslatableText("selectWorld.data_read")));
-    }
-
-    @Inject(at = @At("RETURN"), method = "init()V")
+    @Inject(at = @At("TAIL"), method = "init()V")
     public void init(CallbackInfo info) {
+        for (AbstractButtonWidget button : this.buttons) {
+            if(button.visible && !button.getMessage().equals(new TranslatableText("continuebutton.continueButtonTitle"))) {
+                button.x = this.width / 2 + 2;
+                button.setWidth(98);
+                break;
+            }
+        }
 
         if(ContinueButtonMod.lastLocal) {
             LevelStorage levelStorage = this.client.getLevelStorage();
@@ -207,7 +212,6 @@ public class MixinTitleScreen extends Screen {
             }
         }
     }
-
 
     @Inject(at = @At("RETURN"), method = "tick()V")
     public void tick(CallbackInfo info) {
