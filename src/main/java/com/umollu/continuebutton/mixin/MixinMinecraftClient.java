@@ -21,7 +21,9 @@ public abstract class MixinMinecraftClient {
             ContinueButtonMod.lastLocal = false;
             ContinueButtonMod.serverName = this.getCurrentServerEntry().name;
             ContinueButtonMod.serverAddress = this.getCurrentServerEntry().address;
-            ContinueButtonMod.saveConfig();
+        } else {
+            ContinueButtonMod.lastLocal = true;
         }
+        ContinueButtonMod.saveConfig();
     }
 }

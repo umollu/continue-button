@@ -12,6 +12,7 @@ import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.options.ServerList;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.toast.SystemToast;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.OrderedText;
@@ -37,6 +38,7 @@ public class MixinTitleScreen extends Screen {
     private LevelSummary localLevel = null;
     private final MultiplayerServerListPinger serverListPinger = new MultiplayerServerListPinger();
     private ServerInfo serverInfo = null;
+    private boolean isFirstRender = true;
 
     protected MixinTitleScreen(Text title) {
         super(title);
@@ -136,7 +138,8 @@ public class MixinTitleScreen extends Screen {
                     list.add(new LiteralText(localLevel.getDisplayName()).asOrderedText());
                     this.renderOrderedTooltip(matrixStack, list, i, j);
                 }
-            } else {
+            } else if (serverInfo!= null) {
+
                 List<OrderedText> list = new ArrayList<>(this.client.textRenderer.wrapLines(serverInfo.label, 270));
                 list.add(0, new LiteralText(serverInfo.name).formatted(Formatting.GRAY).asOrderedText());
                 this.renderOrderedTooltip(matrixStack, list, i, j);
@@ -151,8 +154,11 @@ public class MixinTitleScreen extends Screen {
             this.client.method_29970(new SaveLevelScreen(new TranslatableText("selectWorld.data_read")));
             this.client.startIntegratedServer(this.level.getName());
         }
-        ContinueButtonMod.lastLocal = true;
-        ContinueButtonMod.saveConfig();
+    }
+
+    @Inject(at = @At("HEAD"), method = "init()V")
+    public void initAtHead(CallbackInfo info) {
+        isFirstRender = true;
     }
 
     @Inject(at = @At("TAIL"), method = "init()V")
@@ -164,52 +170,64 @@ public class MixinTitleScreen extends Screen {
                 break;
             }
         }
+    }
 
-        if(ContinueButtonMod.lastLocal) {
-            LevelStorage levelStorage = this.client.getLevelStorage();
-            List<LevelSummary> levels = null;
-            try {
-                levels = levelStorage.getLevelList();
-            } catch (LevelStorageException e) {
-                e.printStackTrace();
-            }
-            if (levels.isEmpty()) {
-                localLevel = null;
-            } else {
-                Collections.sort(levels);
-                localLevel = levels.get(0);
-            }
-        } else {
-            ServerList serverList = new ServerList(this.client);
-            ServerInfo serverInList = null;
-            for(int i = 0; i < serverList.size(); i++) {
-                if(serverList.get(i).address.equalsIgnoreCase(ContinueButtonMod.serverAddress)) {
-                    serverInList = serverList.get(i);
-                }
-            }
-
-            if(serverInList == null) {
-                ContinueButtonMod.lastLocal = true;
-                ContinueButtonMod.serverName = "";
-                ContinueButtonMod.serverAddress = "";
-                ContinueButtonMod.saveConfig();
-            }
-            else {
-                serverInfo = serverInList;
-
-                ContinueButtonMod.lastLocal = false;
-                ContinueButtonMod.serverName = serverInfo.name;
-                ContinueButtonMod.serverAddress = serverInfo.address;
-                ContinueButtonMod.saveConfig();
-
-                serverInfo.label = new TranslatableText("multiplayer.status.pinging");
+    private void atFirstRender() {
+        new Thread(() -> {
+            if(ContinueButtonMod.lastLocal) {
+                LevelStorage levelStorage = this.client.getLevelStorage();
+                List<LevelSummary> levels = null;
                 try {
-                    serverListPinger.add(serverInfo, () -> {
-                    });
-                } catch (Exception e) {
+                    levels = levelStorage.getLevelList();
+                } catch (LevelStorageException e) {
                     e.printStackTrace();
                 }
+                if (levels.isEmpty()) {
+                    localLevel = null;
+                } else {
+                    Collections.sort(levels);
+                    localLevel = levels.get(0);
+                }
+            } else {
+                ServerList serverList = new ServerList(this.client);
+                ServerInfo serverInList = null;
+                for(int i = 0; i < serverList.size(); i++) {
+                    if(serverList.get(i).address.equalsIgnoreCase(ContinueButtonMod.serverAddress)) {
+                        serverInList = serverList.get(i);
+                    }
+                }
+
+                if(serverInList == null) {
+                    ContinueButtonMod.lastLocal = true;
+                    ContinueButtonMod.serverName = "";
+                    ContinueButtonMod.serverAddress = "";
+                    ContinueButtonMod.saveConfig();
+                }
+                else {
+                    serverInfo = serverInList;
+
+                    ContinueButtonMod.lastLocal = false;
+                    ContinueButtonMod.serverName = serverInfo.name;
+                    ContinueButtonMod.serverAddress = serverInfo.address;
+                    ContinueButtonMod.saveConfig();
+
+                    serverInfo.label = new TranslatableText("multiplayer.status.pinging");
+                    try {
+                        serverListPinger.add(serverInfo, () -> {
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
+        }).start();
+    }
+
+    @Inject(at = @At("HEAD"), method = "render")
+    public void renderAtHead(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo info) {
+        if(isFirstRender) {
+            isFirstRender = false;
+            atFirstRender();
         }
     }
 
