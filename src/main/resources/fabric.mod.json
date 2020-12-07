@@ -9,12 +9,11 @@
   ],
   "contact": {
     "homepage": "https://umollu.com/",
-    "sources": "https://github.com/umollu/continue-button"
+    "sources": "https://github.com/umollu/continue-button",
+    "issues": "https://github.com/umollu/continue-button/issues"
   },
-
   "license": "MIT",
   "icon": "assets/continuebutton/icon.png",
-
   "environment": "*",
   "entrypoints": {
     "client": [
@@ -27,6 +26,6 @@
   "depends": {
     "fabricloader": ">=0.7.4",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "minecraft": "1.17.x"
   }
 }
