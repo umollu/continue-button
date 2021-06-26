@@ -1,17 +1,16 @@
 package com.umollu.continuebutton.mixin;
 
 import com.umollu.continuebutton.ContinueButtonMod;
-import net.minecraft.SharedConstants;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.gui.screen.world.CreateWorldScreen;
-import net.minecraft.client.gui.screen.world.EditWorldScreen;
-import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.network.MultiplayerServerListPinger;
+import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
-import net.minecraft.client.options.ServerList;
+import net.minecraft.client.option.ServerList;
 import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.toast.SystemToast;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
@@ -27,7 +26,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +45,7 @@ public class MixinTitleScreen extends Screen {
     @Inject(at = @At("HEAD"), method = "initWidgetsNormal(II)V")
     public void drawMenuButton(int y, int spacingY, CallbackInfo info) {
 
-        AbstractButtonWidget continueButton = new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("continuebutton.continueButtonTitle"), button -> {
+        ButtonWidget continueButton = new ButtonWidget(this.width / 2 - 100, y, 98, 20, new TranslatableText("continuebutton.continueButtonTitle"), button -> {
             if(ContinueButtonMod.lastLocal) {
                 LevelStorage levelStorage = this.client.getLevelStorage();
                 List<LevelSummary> levels = null;
@@ -57,50 +55,13 @@ public class MixinTitleScreen extends Screen {
                     e.printStackTrace();
                 }
                 if (levels.isEmpty()) {
-                    this.client.openScreen(CreateWorldScreen.method_31130((Screen) null));
+                    this.client.openScreen(CreateWorldScreen.create((Screen) null));
                 } else {
                     Collections.sort(levels);
                     level = levels.get(0);
 
                     if (!level.isLocked()) {
-                        if (level.isOutdatedLevel()) {
-                            Text text = new TranslatableText("selectWorld.backupQuestion");
-                            Text text2 = new TranslatableText("selectWorld.backupWarning", new Object[]{level.getVersion(), SharedConstants.getGameVersion().getName()});
-                            this.client.openScreen(new BackupPromptScreen(this, (bl, bl2) -> {
-                                if (bl) {
-                                    String string = level.getName();
-
-                                    try {
-                                        LevelStorage.Session session = this.client.getLevelStorage().createSession(string);
-                                        Throwable var5 = null;
-
-                                        try {
-                                            EditWorldScreen.backupLevel(session);
-                                        } catch (Throwable var15) {
-                                            var5 = var15;
-                                            throw var15;
-                                        } finally {
-                                            if (session != null) {
-                                                if (var5 != null) {
-                                                    try {
-                                                        session.close();
-                                                    } catch (Throwable var14) {
-                                                        var5.addSuppressed(var14);
-                                                    }
-                                                } else {
-                                                    session.close();
-                                                }
-                                            }
-
-                                        }
-                                    } catch (IOException var17) {
-                                        SystemToast.addWorldAccessFailureToast(this.client, string);
-                                    }
-                                }
-
-                                start();
-                            }, text, text2, false));
-                        } else if (level.isFutureLevel()) {
+                        if (level.isFutureLevel()) {
                             this.client.openScreen(new ConfirmScreen((bl) -> {
                                 if (bl) {
                                     try {
@@ -123,7 +84,7 @@ public class MixinTitleScreen extends Screen {
                 }
             }
             else {
-                this.client.openScreen(new ConnectScreen(this, this.client, serverInfo));
+                ConnectScreen.connect(this, this.client, ServerAddress.parse(serverInfo.address), serverInfo);
             }
 
         }, (button, matrixStack, i, j) -> {
@@ -145,7 +106,7 @@ public class MixinTitleScreen extends Screen {
                 this.renderOrderedTooltip(matrixStack, list, i, j);
             }
         });
-        addButton(continueButton);
+        Screens.getButtons(this).add(continueButton);
     }
 
     private void start() {
@@ -163,7 +124,7 @@ public class MixinTitleScreen extends Screen {
 
     @Inject(at = @At("TAIL"), method = "init()V")
     public void init(CallbackInfo info) {
-        for (AbstractButtonWidget button : this.buttons) {
+        for (ClickableWidget button : Screens.getButtons(this)) {
             if(button.visible && !button.getMessage().equals(new TranslatableText("continuebutton.continueButtonTitle"))) {
                 button.x = this.width / 2 + 2;
                 button.setWidth(98);
