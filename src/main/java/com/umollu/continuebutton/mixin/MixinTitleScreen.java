@@ -55,24 +55,24 @@ public class MixinTitleScreen extends Screen {
                     e.printStackTrace();
                 }
                 if (levels.isEmpty()) {
-                    this.client.openScreen(CreateWorldScreen.create((Screen) null));
+                    this.client.setScreen(CreateWorldScreen.create((Screen) null));
                 } else {
                     Collections.sort(levels);
                     level = levels.get(0);
 
                     if (!level.isLocked()) {
                         if (level.isFutureLevel()) {
-                            this.client.openScreen(new ConfirmScreen((bl) -> {
+                            this.client.setScreen(new ConfirmScreen((bl) -> {
                                 if (bl) {
                                     try {
                                         start();
                                     } catch (Exception var3) {
-                                        this.client.openScreen(new NoticeScreen(() -> {
-                                            this.client.openScreen(this);
+                                        this.client.setScreen(new NoticeScreen(() -> {
+                                            this.client.setScreen(this);
                                         }, new TranslatableText("selectWorld.futureworld.error.title"), new TranslatableText("selectWorld.futureworld.error.text")));
                                     }
                                 } else {
-                                    this.client.openScreen(this);
+                                    this.client.setScreen(this);
                                 }
 
                             }, new TranslatableText("selectWorld.versionQuestion"), new TranslatableText("selectWorld.versionWarning", new Object[]{this.level.getVersion(), new TranslatableText("selectWorld.versionJoinButton"), ScreenTexts.CANCEL})));
@@ -112,7 +112,7 @@ public class MixinTitleScreen extends Screen {
     private void start() {
         this.client.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
         if (this.client.getLevelStorage().levelExists(this.level.getName())) {
-            this.client.method_29970(new SaveLevelScreen(new TranslatableText("selectWorld.data_read")));
+            this.client.setScreenAndRender(new SaveLevelScreen(new TranslatableText("selectWorld.data_read")));
             this.client.startIntegratedServer(this.level.getName());
         }
     }
