@@ -38,6 +38,8 @@ public class MixinTitleScreen extends Screen {
     private final MultiplayerServerListPinger serverListPinger = new MultiplayerServerListPinger();
     private ServerInfo serverInfo = null;
     private boolean isFirstRender = true;
+    private boolean readyToSetTooltip = false;
+    ButtonWidget continueButtonWidget = null;
 
     protected MixinTitleScreen(Text title) {
         super(title);
@@ -46,7 +48,7 @@ public class MixinTitleScreen extends Screen {
     @Inject(at = @At("HEAD"), method = "initWidgetsNormal(II)V")
     public void drawMenuButton(int y, int spacingY, CallbackInfo info) {
 
-        ButtonWidget continueButton = new ButtonWidget(this.width / 2 - 100, y, 98, 20, Text.translatable("continuebutton.continueButtonTitle"), button -> {
+        ButtonWidget.Builder continueButtonBuilder = ButtonWidget.builder(Text.translatable("continuebutton.continueButtonTitle") , button -> {
             if(ContinueButtonMod.lastLocal) {
                 assert this.client != null;
                 LevelStorage levelStorage = this.client.getLevelStorage();
@@ -88,27 +90,11 @@ public class MixinTitleScreen extends Screen {
             else {
                 ConnectScreen.connect(this, this.client, ServerAddress.parse(serverInfo.address), serverInfo);
             }
-
-        }, (button, matrixStack, i, j) -> {
-            if(ContinueButtonMod.lastLocal) {
-                if(localLevel == null) {
-                    List<OrderedText> list = new ArrayList<>();
-                    list.add(Text.translatable("selectWorld.create").formatted(Formatting.GRAY).asOrderedText());
-                    this.renderOrderedTooltip(matrixStack, list, i, j);
-                } else {
-                    List<OrderedText> list = new ArrayList<>();
-                    list.add(Text.translatable("menu.singleplayer").formatted(Formatting.GRAY).asOrderedText());
-                    list.add(Text.literal(localLevel.getDisplayName()).asOrderedText());
-                    this.renderOrderedTooltip(matrixStack, list, i, j);
-                }
-            } else if (serverInfo!= null) {
-
-                List<OrderedText> list = new ArrayList<>(this.client.textRenderer.wrapLines(serverInfo.label, 270));
-                list.add(0, Text.literal(serverInfo.name).formatted(Formatting.GRAY).asOrderedText());
-                this.renderOrderedTooltip(matrixStack, list, i, j);
-            }
         });
-        Screens.getButtons(this).add(continueButton);
+        continueButtonBuilder.dimensions(this.width / 2 - 100, y, 98, 20);
+        continueButtonWidget = continueButtonBuilder.build();
+        Screens.getButtons(this).add(continueButtonWidget);
+
     }
 
     private void start() {
@@ -122,13 +108,14 @@ public class MixinTitleScreen extends Screen {
     @Inject(at = @At("HEAD"), method = "init()V")
     public void initAtHead(CallbackInfo info) {
         isFirstRender = true;
+        readyToSetTooltip = false;
     }
 
     @Inject(at = @At("TAIL"), method = "init()V")
     public void init(CallbackInfo info) {
         for (ClickableWidget button : Screens.getButtons(this)) {
             if(button.visible && !button.getMessage().equals(Text.translatable("continuebutton.continueButtonTitle"))) {
-                button.x = this.width / 2 + 2;
+                button.setX(this.width / 2 + 2);
                 button.setWidth(98);
                 break;
             }
@@ -184,6 +171,7 @@ public class MixinTitleScreen extends Screen {
                     }
                 }
             }
+            readyToSetTooltip = true;
         }).start();
     }
 
@@ -193,6 +181,32 @@ public class MixinTitleScreen extends Screen {
             isFirstRender = false;
             atFirstRender();
         }
+    }
+
+    @Inject(at = @At("TAIL"), method = "render")
+    public void renderAtTail(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo info) {
+
+        if(readyToSetTooltip) {
+            if(continueButtonWidget.isHovered()) {
+                if (ContinueButtonMod.lastLocal) {
+                    if (localLevel == null) {
+                        List<OrderedText> list = new ArrayList<>();
+                        list.add(Text.translatable("selectWorld.create").formatted(Formatting.GRAY).asOrderedText());
+                        this.renderOrderedTooltip(matrices, list, mouseX, mouseY);
+                    } else {
+                        List<OrderedText> list = new ArrayList<>();
+                        list.add(Text.translatable("menu.singleplayer").formatted(Formatting.GRAY).asOrderedText());
+                        list.add(Text.literal(localLevel.getDisplayName()).asOrderedText());
+                        this.renderOrderedTooltip(matrices, list, mouseX, mouseY);
+                    }
+                } else if (serverInfo != null) {
+                    List<OrderedText> list = new ArrayList<>(this.client.textRenderer.wrapLines(serverInfo.label, 270));
+                    list.add(0, Text.literal(serverInfo.name).formatted(Formatting.GRAY).asOrderedText());
+                    this.renderOrderedTooltip(matrices, list, mouseX, mouseY);
+                }
+            }
+        }
+
     }
 
     @Inject(at = @At("RETURN"), method = "tick()V")
