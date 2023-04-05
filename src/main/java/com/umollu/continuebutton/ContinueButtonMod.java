@@ -20,7 +20,7 @@ public class ContinueButtonMod implements ClientModInitializer {
     }
 
     public static void saveConfig() {
-        File configDir = new File(FabricLoader.getInstance().getConfigDirectory(), "continuebutton");
+        File configDir = new File(FabricLoader.getInstance().getConfigDir().toFile(), "continuebutton");
         File configFile = new File(configDir, "config.properties");
         Properties properties = new Properties();
         try (FileInputStream stream = new FileInputStream(configFile)) {
@@ -37,7 +37,7 @@ public class ContinueButtonMod implements ClientModInitializer {
     }
 
     static {
-        File configDir = new File(FabricLoader.getInstance().getConfigDirectory(), "continuebutton");
+        File configDir = new File(FabricLoader.getInstance().getConfigDir().toFile(), "continuebutton");
 
         if (!configDir.exists()) {
             if (!configDir.mkdir()) {
